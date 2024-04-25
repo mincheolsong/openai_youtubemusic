@@ -1,25 +1,21 @@
-import logo from './logo.svg';
-import './App.css';
+import "./App.css";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import Openai from "./pages/Openai";
+import GoogleOAuth from "./pages/GoogleOAuth";
+import YoutubeMusic from "./pages/YoutubeMusic";
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    const navigate = useNavigate();
+
+    return (
+        <>
+            <Routes>
+                <Route path="/googleOAuth" element={<GoogleOAuth />} />
+                <Route path="/openai" element={<Openai />} />
+                <Route path="/youtubeMusic" element={<YoutubeMusic />} />
+            </Routes>
+        </>
+    );
 }
 
 export default App;
