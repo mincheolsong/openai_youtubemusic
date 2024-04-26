@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import OpenAI from "openai";
 import axios from "axios";
-import * as S from './Openai.style.ts';
-import playBtn from '../assets/playBtn.svg';
+import * as S from "./Openai.style.ts";
+import playBtn from "../assets/playBtn.svg";
 
 function Openai() {
     const playlist_prefix = "https://music.youtube.com/browse/VL";
@@ -17,8 +18,10 @@ function Openai() {
     `;
     let playlistId;
     let videoId;
-    
 
+    
+    
+    const [accessToken,setAccessToken] = useState("");
     const [openai, setOpenai] = useState();
     const [prompt, setPrompt] = useState("");
     const [count, setCount] = useState(5);
@@ -26,29 +29,34 @@ function Openai() {
     const [playlistUrl, setPlaylistUrl] = useState("");
     const [errorMsg, setErrorMsg] = useState("");
 
-
     const messages = [
-      {
-          role: "system",
-          content: `You are helpful playlist generating assistant.
+        {
+            role: "system",
+            content: `You are helpful playlist generating assistant.
       You should generate a list of songs and their artists according to a text prompt.
       You should return a JSON array, where each element follows this format : {"song" : <song_title>, "artist" : <artist_name>}`,
-      },
-      {
-          role: "user",
-          content: "Generate a playlist of 5 songs based on this prompt : super super sad songs",
-      },
-      { role: "assistant", content: example_json },
-      {
-          role: "user",
-          content: `Generate a playlist of ${count} songs based on this prompt : ${prompt}`,
-      },
-  ];
+        },
+        {
+            role: "user",
+            content: "Generate a playlist of 5 songs based on this prompt : super super sad songs",
+        },
+        { role: "assistant", content: example_json },
+        {
+            role: "user",
+            content: `Generate a playlist of ${count} songs based on this prompt : ${prompt}`,
+        },
+    ];
+
+    const setAccesstToken = ()=>{
+      const param = new URLSearchParams(window.location.hash);
+      const token = param.get("access_token");
+      setAccessToken(token);
+    }
 
     const settingOpenAi = async () => {
         setOpenai(
             new OpenAI({
-                apiKey: '',
+                apiKey: process.env.REACT_APP_OPENAI_KEY,
                 dangerouslyAllowBrowser: true,
             })
         );
@@ -57,21 +65,18 @@ function Openai() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        // const accessToken = await ipcRenderer.invoke('token');
         try {
-          // openai에게 추천받기
-          const openaiResponse = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages,
-          });
-    
-          const parsedOpenaiResponse = JSON.parse(
-            openaiResponse.choices[0].message.content,
-          ); // openai에서 받은 응답 [ {song : 'title', artist : 'artist'}, {song : 'title', artist : 'artist'}]
-    
-          console.log(parsedOpenaiResponse);
+            // openai에게 추천받기
+            const openaiResponse = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo",
+                messages,
+            });
 
-          /*
+            const parsedOpenaiResponse = JSON.parse(openaiResponse.choices[0].message.content); // openai에서 받은 응답 [ {song : 'title', artist : 'artist'}, {song : 'title', artist : 'artist'}]
+
+            console.log(parsedOpenaiResponse);
+
+            /*
           // youtube에 playlist만들기
           const playListResponse = await axios.post(
             `https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&part=status&key=${}`,
@@ -103,7 +108,7 @@ function Openai() {
           for (let i = 0; i < parsedOpenaiResponse.length; i++) {
             // youtube에 노래 검색
             const youtubeSearchResponse = await axios.get(
-              `https://youtube.googleapis.com/youtube/v3/search?part=snippet&part=id&maxResults=1&q=${parsedOpenaiResponse[i].song}%7C${parsedOpenaiResponse[i].artist}&type=video&videoCategoryId=10&key=${m}`,
+              `https://youtube.googleapis.com/youtube/v3/search?part=snippet&part=id&maxResults=1&q=${parsedOpenaiResponse[i].song}%7C${parsedOpenaiResponse[i].artist}&type=video&videoCategoryId=10&key=${process.env.REACT_APP_YOUTUBE_KEY}`,
             );
     
             // 에러 컨트롤
@@ -143,31 +148,31 @@ function Openai() {
 
             setLoading(false);
             setPlaylistUrl(playlistUrl);
-            setPrompt('');
-          //}
+            setPrompt("");
+            //}
         } catch (err) {
-          /* empty */
+            /* empty */
         }
-      };
+    };
 
     useEffect(() => {
         settingOpenAi();
-        console.log(openai);
+        setAccesstToken();
     }, []);
 
     return (
-      <S.Wrapper>
-      <S.Header>어떤 노래를 듣고 싶으세요?</S.Header>
+        <S.Wrapper>
+            <S.Header>어떤 노래를 듣고 싶으세요?</S.Header>
 
-      <S.Body>
-        <S.Input>
-          <S.TitleInput
-            onChange={(e) => {
-              setPrompt(e.target.value);
-            }}
-            placeholder="코딩할 때 듣기 좋은 노래"
-          />
-          {/* <S.CountInput
+            <S.Body>
+                <S.Input>
+                    <S.TitleInput
+                        onChange={(e) => {
+                            setPrompt(e.target.value);
+                        }}
+                        placeholder="코딩할 때 듣기 좋은 노래"
+                    />
+                    {/* <S.CountInput
             onChange={(e) => {
               setCount(e.target.valueAsNumber);
             }}
@@ -176,33 +181,31 @@ function Openai() {
             defaultValue={1}
           ></S.CountInput>
           <S.gae>개</S.gae> */}
-        </S.Input>
-        <S.PlayButton
-          onClick={handleSubmit}
-          disabled={loading || prompt.length === 0}
-        >
-          {loading === true ? <S.Loading /> : <S.playImg src={playBtn} />}
-        </S.PlayButton>
-      </S.Body>
+                </S.Input>
+                <S.PlayButton onClick={handleSubmit} disabled={loading || prompt.length === 0}>
+                    {loading === true ? <S.Loading /> : <S.playImg src={playBtn} />}
+                </S.PlayButton>
+            </S.Body>
 
-      {loading === false && playlistUrl.length > 0 ? (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 20,
-            left: 95,
-            cursor: 'pointer',
-          }}
-          onClick={() => {
-            // openNewWindow(playlistUrl);
-            // ipcRenderer.sendMessage('showYouTubeMusicWindow', playlistUrl);
-          }}
-        >
-          요기 만들었어요
-        </div>
-      ) : null}
-    </S.Wrapper>
-    )
+            {loading === false && playlistUrl.length > 0 ? (
+                <div
+                    style={{
+                        position: "absolute",
+                        bottom: 20,
+                        left: 95,
+                        cursor: "pointer",
+                    }}
+                    onClick={() => {
+                        window.location.href = playlistUrl;
+                        // openNewWindow(playlistUrl);
+                        // ipcRenderer.sendMessage('showYouTubeMusicWindow', playlistUrl);
+                    }}
+                >
+                    요기 만들었어요
+                </div>
+            ) : null}
+        </S.Wrapper>
+    );
 }
 
 export default Openai;
